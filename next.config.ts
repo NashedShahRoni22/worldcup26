@@ -1,7 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  async rewrites() {
+    return [
+      {
+        source: '/api/football/:path*',
+        destination: 'https://api.football-data.org/v4/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
