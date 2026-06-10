@@ -39,22 +39,15 @@ export default function RootLayout({
             <div className="flex flex-col flex-1 min-w-0 bg-background">
               {/* Desktop Top Navbar */}
               <header className="hidden sm:flex h-16 items-center justify-between border-b border-border bg-background/80 px-8 backdrop-blur sticky top-0 z-10 w-full">
-                <Link href="/" className="text-2xl font-heading text-primary tracking-wide hover:opacity-80 transition-opacity">
+                <Link
+                  href="/"
+                  className="text-2xl font-heading text-primary tracking-wide hover:opacity-80 transition-opacity"
+                >
                   FIFA World Cup 2026
                 </Link>
-                {/* <nav className="flex items-center gap-8">
-                  <Link href="/teams" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">
-                    My Teams
-                  </Link>
-                  <Link href="/squad" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">
-                    My Squad
-                  </Link>
-                </nav> */}
-                <DesktopNav/>
+                <DesktopNav />
               </header>
-              <main className="flex-1 w-full relative z-0">
-                {children}
-              </main>
+              <main className="flex-1 w-full relative z-0">{children}</main>
             </div>
             <MobileNav />
           </TooltipProvider>
@@ -63,4 +56,3 @@ export default function RootLayout({
     </html>
   );
 }
-

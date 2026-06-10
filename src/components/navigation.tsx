@@ -1,14 +1,13 @@
 'use client';
 
-import { Calendar, Trophy, Users } from "lucide-react";
+import { Calendar, Star } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 export const navItems = [
   { href: "/", icon: Calendar, label: "Fixtures" },
-  { href: "/teams", icon: Trophy, label: "Teams" },
-  { href: "/squad", icon: Users, label: "Squad" },
+  { href: "/favourite", icon: Star, label: "Favourite" },
 ];
 
 export function MobileNav() {

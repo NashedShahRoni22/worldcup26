@@ -1,21 +1,42 @@
-import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Fixture } from '@/types/football';
-import { formatKickoffDate, formatKickoffTime } from '@/lib/date-utils';
-import { motion } from 'framer-motion';
+import Link from "next/link";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Fixture } from "@/types/football";
+import { formatKickoffDate, formatKickoffTime } from "@/lib/date-utils";
+import { motion } from "framer-motion";
 
 export function FixtureCard({ fixture }: { fixture: Fixture }) {
   const homeTeam = fixture.homeTeam;
   const awayTeam = fixture.awayTeam;
 
-  const isLive = fixture.status === 'IN_PLAY' || fixture.status === 'PAUSED';
-  const isFinished = fixture.status === 'FINISHED';
+  const isLive = fixture.status === "IN_PLAY" || fixture.status === "PAUSED";
+  const isFinished = fixture.status === "FINISHED";
 
   const getStatusBadge = () => {
-    if (isLive) return <Badge variant="default" className="bg-[#EF4444] text-white hover:bg-[#EF4444]/80 animate-pulse border-none shadow-[0_0_10px_rgba(239,68,68,0.5)]">LIVE</Badge>;
-    if (isFinished) return <Badge variant="secondary" className="bg-border text-white border-none">FT</Badge>;
-    return <Badge variant="outline" className="text-muted-foreground border-border">{formatKickoffTime(fixture.utcDate)}</Badge>;
+    if (isLive)
+      return (
+        <Badge
+          variant="default"
+          className="bg-[#EF4444] text-white hover:bg-[#EF4444]/80 animate-pulse border-none shadow-[0_0_10px_rgba(239,68,68,0.5)]"
+        >
+          LIVE
+        </Badge>
+      );
+    if (isFinished)
+      return (
+        <Badge variant="secondary" className="bg-border text-white border-none">
+          FT
+        </Badge>
+      );
+    return (
+      <Badge variant="outline" className="text-muted-foreground border-border">
+        {new Date(fixture.utcDate).toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        })}
+      </Badge>
+    );
   };
 
   return (
@@ -27,21 +48,25 @@ export function FixtureCard({ fixture }: { fixture: Fixture }) {
         <CardContent className="p-4 sm:p-6">
           <div className="flex justify-between items-center mb-5 pb-3 border-b border-border/50">
             <span className="text-xs text-muted-foreground uppercase tracking-widest font-heading font-semibold">
-              {fixture.competition?.name || 'World Cup'} • Matchday {fixture.matchday}
+              {fixture.competition?.name || "World Cup"} • Matchday{" "}
+              {fixture.matchday}
             </span>
             {getStatusBadge()}
           </div>
 
           <div className="flex justify-between items-center">
             {/* Home Team */}
-            <Link href={`/team/${homeTeam.id}`} className="flex flex-col items-center gap-3 w-1/3 group">
+            <Link
+              href={`/team/${homeTeam.id}`}
+              className="flex flex-col items-center gap-3 w-1/3 group"
+            >
               <div className="w-16 h-16 sm:w-20 sm:h-20 bg-background rounded-full p-3 flex items-center justify-center border border-border group-hover:border-primary transition-colors shadow-inner">
                 {homeTeam.crest ? (
-                  <motion.img 
+                  <motion.img
                     whileHover={{ scale: 1.1 }}
-                    src={homeTeam.crest} 
-                    alt={homeTeam.name} 
-                    className="max-w-full max-h-full object-contain drop-shadow-md" 
+                    src={homeTeam.crest}
+                    alt={homeTeam.name}
+                    className="max-w-full max-h-full object-contain drop-shadow-md"
                   />
                 ) : (
                   <div className="w-10 h-10 bg-border rounded-full" />
@@ -56,16 +81,34 @@ export function FixtureCard({ fixture }: { fixture: Fixture }) {
             <div className="flex flex-col items-center justify-center w-1/3 px-2">
               {isFinished || isLive ? (
                 <div className="text-3xl sm:text-5xl font-heading font-bold flex items-center gap-3">
-                  <span className={isFinished && fixture.score.fullTime.home! > fixture.score.fullTime.away! ? "text-primary" : "text-foreground"}>
+                  <span
+                    className={
+                      isFinished &&
+                      fixture.score.fullTime.home! >
+                        fixture.score.fullTime.away!
+                        ? "text-primary"
+                        : "text-foreground"
+                    }
+                  >
                     {fixture.score.fullTime.home ?? 0}
                   </span>
                   <span className="text-muted-foreground text-2xl">-</span>
-                  <span className={isFinished && fixture.score.fullTime.away! > fixture.score.fullTime.home! ? "text-primary" : "text-foreground"}>
+                  <span
+                    className={
+                      isFinished &&
+                      fixture.score.fullTime.away! >
+                        fixture.score.fullTime.home!
+                        ? "text-primary"
+                        : "text-foreground"
+                    }
+                  >
                     {fixture.score.fullTime.away ?? 0}
                   </span>
                 </div>
               ) : (
-                <div className="text-2xl font-heading text-muted-foreground/50">VS</div>
+                <div className="text-2xl font-heading text-muted-foreground/50">
+                  VS
+                </div>
               )}
               <div className="text-xs text-muted-foreground mt-3 font-medium uppercase tracking-wider">
                 {formatKickoffDate(fixture.utcDate)}
@@ -73,14 +116,17 @@ export function FixtureCard({ fixture }: { fixture: Fixture }) {
             </div>
 
             {/* Away Team */}
-            <Link href={`/team/${awayTeam.id}`} className="flex flex-col items-center gap-3 w-1/3 group">
+            <Link
+              href={`/team/${awayTeam.id}`}
+              className="flex flex-col items-center gap-3 w-1/3 group"
+            >
               <div className="w-16 h-16 sm:w-20 sm:h-20 bg-background rounded-full p-3 flex items-center justify-center border border-border group-hover:border-primary transition-colors shadow-inner">
                 {awayTeam.crest ? (
-                  <motion.img 
+                  <motion.img
                     whileHover={{ scale: 1.1 }}
-                    src={awayTeam.crest} 
-                    alt={awayTeam.name} 
-                    className="max-w-full max-h-full object-contain drop-shadow-md" 
+                    src={awayTeam.crest}
+                    alt={awayTeam.name}
+                    className="max-w-full max-h-full object-contain drop-shadow-md"
                   />
                 ) : (
                   <div className="w-10 h-10 bg-border rounded-full" />
@@ -96,4 +142,3 @@ export function FixtureCard({ fixture }: { fixture: Fixture }) {
     </motion.div>
   );
 }
-
