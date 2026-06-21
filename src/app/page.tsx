@@ -6,13 +6,10 @@ import { FixtureCard } from "@/components/fixture-card";
 import { FixtureSkeleton } from "@/components/fixture-skeleton";
 import {
   isToday,
-  isTomorrow,
   isAfter,
-  addDays,
   parseISO,
   isSameDay,
   format,
-  differenceInSeconds,
 } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Calendar as CalendarIcon, Search, X } from "lucide-react";
@@ -26,52 +23,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import Link from "next/link";
-
-function Countdown({ targetDate }: { targetDate: string }) {
-  const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
-
-  useEffect(() => {
-    const target = parseISO(targetDate);
-    const interval = setInterval(() => {
-      const now = new Date();
-      const diff = differenceInSeconds(target, now);
-      if (diff <= 0) {
-        clearInterval(interval);
-        return;
-      }
-      setTimeLeft({
-        d: Math.floor(diff / (3600 * 24)),
-        h: Math.floor((diff % (3600 * 24)) / 3600),
-        m: Math.floor((diff % 3600) / 60),
-        s: diff % 60,
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [targetDate]);
-
-  return (
-    <div className="flex gap-3 sm:gap-6 justify-center items-center mt-8">
-      {[
-        { label: "Days", value: timeLeft.d },
-        { label: "Hours", value: timeLeft.h },
-        { label: "Mins", value: timeLeft.m },
-        { label: "Secs", value: timeLeft.s },
-      ].map((item) => (
-        <div key={item.label} className="flex flex-col items-center">
-          <div className="bg-card border border-border w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent"></div>
-            <span className="text-4xl sm:text-6xl font-heading font-bold text-primary drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]">
-              {item.value.toString().padStart(2, "0")}
-            </span>
-          </div>
-          <span className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-[0.2em] mt-3 font-semibold">
-            {item.label}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export default function Home() {
   const { data: fixtures, isLoading, error } = useWorldCupFixtures();
@@ -94,18 +45,11 @@ export default function Home() {
 
   const getGroupedFixtures = () => {
     if (!filteredFixtures)
-      return { today: [], upcoming: [], nextMatch: null, popularTeams: [] };
+      return { today: [], upcomingByStage: {}, nextMatch: null, popularTeams: [] };
 
     const now = new Date();
     const today: typeof filteredFixtures = [];
-    const upcomingByStage: Record<string, typeof filteredFixtures> = {
-      "Group Stage": [],
-      "Round of 16 (Knockout)": [],
-      "Quarter Final": [],
-      "Semi Final": [],
-      "Final": [],
-    };
-    let nextMatch: any = null;
+    const upcomingByDate: Record<string, typeof filteredFixtures> = {};
 
     // Extract unique teams with crests for Popular Teams section
     const teamsMap = new Map();
@@ -114,19 +58,9 @@ export default function Home() {
       const date = parseISO(fixture.utcDate);
       if (isToday(date)) today.push(fixture);
       else if (isAfter(date, now)) {
-        const m = date.getMonth() + 1; // 1-12
-        const d = date.getDate();
-        let stage = "Group Stage";
-        if ((m === 6 && d >= 29) || (m === 7 && d <= 8)) stage = "Round of 16 (Knockout)";
-        else if (m === 7 && d >= 10 && d <= 12) stage = "Quarter Final";
-        else if (m === 7 && d >= 15 && d <= 16) stage = "Semi Final";
-        else if (m === 7 && d >= 19) stage = "Final";
-        
-        upcomingByStage[stage].push(fixture);
-      }
-
-      if (!nextMatch && isAfter(date, now) && fixture.status !== "FINISHED") {
-        nextMatch = fixture;
+        const dateKey = format(date, "yyyy-MM-dd");
+        if (!upcomingByDate[dateKey]) upcomingByDate[dateKey] = [];
+        upcomingByDate[dateKey].push(fixture);
       }
 
       if (fixture.homeTeam.crest && !teamsMap.has(fixture.homeTeam.id)) {
@@ -150,57 +84,20 @@ export default function Home() {
 
     return {
       today,
-      upcomingByStage,
-      nextMatch,
+      upcomingByDate,
       popularTeams: popularTeamsArray.slice(0, 12), // Top 12 unique teams
     };
   };
 
-  const { today, upcomingByStage, nextMatch, popularTeams } = getGroupedFixtures();
+  const { today, upcomingByDate, popularTeams } = getGroupedFixtures();
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
-      className="w-full pb-20"
+      className="w-full pb-20 pt-12"
     >
-      {/* Hero Section */}
-      <section className="relative pt-12 pb-20 sm:pt-24 sm:pb-32 px-4 overflow-hidden border-b border-border/50 bg-background">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_center,_rgba(34,197,94,0.15),_transparent_50%)]"></div>
-        <div className="max-w-5xl mx-auto text-center relative z-10">
-          <motion.h1
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="text-5xl sm:text-8xl font-heading font-extrabold tracking-tight text-white mb-6 uppercase drop-shadow-2xl"
-          >
-            FIFA World Cup{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-cyan-400">
-              2026
-            </span>
-          </motion.h1>
-          <motion.p
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="text-muted-foreground text-lg sm:text-2xl max-w-2xl mx-auto"
-          >
-            Follow every fixture, team, and match of the FIFA World Cup 2026 in
-            real-time.
-          </motion.p>
-
-          {nextMatch && (
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.3, type: "spring" }}
-            >
-              <Countdown targetDate={nextMatch.utcDate} />
-            </motion.div>
-          )}
-        </div>
-      </section>
-
       <div className="max-w-6xl mx-auto px-4 sm:px-8 mt-12 space-y-16">
         {/* Filters */}
         <section className="flex flex-col sm:flex-row items-center gap-4">
@@ -363,70 +260,28 @@ export default function Home() {
                     Upcoming Matches
                   </h2>
                   
-                  {Object.entries(upcomingByStage).map(([stage, matches]) => {
+                  {Object.keys(upcomingByDate).sort().map((dateKey) => {
+                    const matches = upcomingByDate[dateKey];
                     if (matches.length === 0) return null;
                     return (
-                      <div key={stage} className="mb-8">
+                      <div key={dateKey} className="mb-8">
                         <div className="flex items-center gap-3 mb-4">
-                          <h3 className="text-xl font-heading text-white">{stage}</h3>
+                          <h3 className="text-xl font-heading text-white">
+                            {format(parseISO(dateKey), "MMMM do, yyyy")}
+                          </h3>
                           <span className="px-3 py-1 bg-secondary/20 text-secondary text-xs rounded-full font-medium">
                             {matches.length} Matches
                           </span>
                         </div>
-                        <div className="overflow-x-auto bg-card border border-border rounded-2xl shadow-sm">
-                          <table className="w-full text-left border-collapse whitespace-nowrap min-w-[600px]">
-                            <thead>
-                              <tr className="border-b border-border bg-muted/30">
-                                <th className="p-4 text-muted-foreground font-medium text-sm">Date & Time</th>
-                                <th className="p-4 text-muted-foreground font-medium text-sm">Match</th>
-                                <th className="p-4 text-muted-foreground font-medium text-sm">Group / Venue</th>
-                                <th className="p-4 text-muted-foreground font-medium text-sm text-right">Status</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {matches.map((fixture) => (
-                                <tr key={fixture.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
-                                  <td className="p-4 text-sm">
-                                    {format(parseISO(fixture.utcDate), "MMM dd, yyyy - hh:mm a")}
-                                  </td>
-                                  <td className="p-4">
-                                    <div className="flex items-center gap-4">
-                                      <div className="flex items-center gap-2 w-32 justify-end">
-                                        <span className="font-semibold text-sm truncate">{fixture.homeTeam.name || "TBD"}</span>
-                                        {fixture.homeTeam.crest ? (
-                                          <img src={fixture.homeTeam.crest} alt="" className="w-6 h-6 object-contain" />
-                                        ) : (
-                                          <div className="w-6 h-6 bg-muted rounded-full"></div>
-                                        )}
-                                      </div>
-                                      <span className="text-muted-foreground text-xs font-bold bg-muted/50 px-2 py-1 rounded">VS</span>
-                                      <div className="flex items-center gap-2 w-32">
-                                        {fixture.awayTeam.crest ? (
-                                          <img src={fixture.awayTeam.crest} alt="" className="w-6 h-6 object-contain" />
-                                        ) : (
-                                          <div className="w-6 h-6 bg-muted rounded-full"></div>
-                                        )}
-                                        <span className="font-semibold text-sm truncate">{fixture.awayTeam.name || "TBD"}</span>
-                                      </div>
-                                    </div>
-                                  </td>
-                                  <td className="p-4 text-sm text-muted-foreground">
-                                    {fixture.group ? fixture.group : fixture.venue || "TBD"}
-                                  </td>
-                                  <td className="p-4 text-right">
-                                    <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full uppercase font-medium">
-                                      {fixture.status}
-                                    </span>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          {matches.map((fixture) => (
+                            <FixtureCard key={fixture.id} fixture={fixture} />
+                          ))}
                         </div>
                       </div>
                     );
                   })}
-                  {Object.values(upcomingByStage).every(arr => arr.length === 0) && (
+                  {Object.keys(upcomingByDate).length === 0 && (
                     <div className="text-center py-16 bg-card rounded-3xl border border-border">
                       <p className="text-muted-foreground text-lg">
                         No upcoming matches found.
